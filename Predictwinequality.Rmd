@@ -1,5 +1,5 @@
 ---
-title: "Assignment2"
+title: "Predict wine quality"
 author: "Chuong Bao Thy Lai"
 date: "9/1/2022"
 output: pdf_document
