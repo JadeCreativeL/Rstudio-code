@@ -1,0 +1,113 @@
+---
+title: "Assignment2"
+author: "Chuong Bao Thy Lai"
+date: "9/1/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning= FALSE, results='hide'}
+set.seed(123)
+library(readxl)
+library(ggplot2)
+library(rsample)
+library(rpart)
+library(rpart.plot)
+library(caret)
+library(randomForest)
+library(rattle)
+```
+
+```{r}
+wine <- read.csv('winequality-red.csv')
+head(wine)
+```
+
+```{r, results='hide'}
+#histogram of the frequency of wine quality ratings
+table(wine$quality)
+wine$quality <- as.factor(wine$quality)
+str(wine$quality)
+quality <- as.numeric(wine$quality)
+```
+```{r}
+hist(quality)
+```
+```{r}
+# split data into training and testing set using an 80% training, 20% testing split
+set.seed(123)
+wine_split  <- initial_split(wine, prop = 0.8, 
+                              strata = "quality")
+wine_train  <- training(wine_split)
+wine_test   <- testing(wine_split)
+```
+
+```{r}
+#build a decision tree model
+wine_1 <- rpart(
+  formula = quality ~ .,
+  data    = wine_train,
+  method  = "class"
+)
+```
+
+```{r}
+prp(wine_1)
+```
+
+```{r}
+fancyRpartPlot(wine_1) 
+```
+
+
+```{r}
+pred <- predict(wine_1,wine_test,type="class")
+confusionMatrix(table(pred,wine_test$quality))
+```
+
+## 4 Random Forest
+
+```{r}
+barplot(table(wine$quality))
+```
+```{r}
+wine2 <- read.csv('winequality-red.csv')
+wine2$taste <- ifelse(wine2$quality < 5, "bad", "good")
+wine2$taste[wine2$quality == 5] <- "normal"
+wine2$taste[wine2$quality == 6] <- "normal"
+wine2$taste <- as.factor(wine2$taste)
+str(wine2$taste)
+```
+```{r}
+ggplot(wine2, aes(taste))+
+  geom_histogram(stat="count", color = "black", fill="blue")
+```
+```{r}
+set.seed(123)
+wine_split2 <- initial_split(wine2, prop = 0.8, 
+                              strata = "taste")
+wine_train2  <- training(wine_split2)
+wine_test2   <- testing(wine_split2)
+```
+
+```{r}
+wine_rf1 <- randomForest(taste~.-quality, data=wine_train2)
+wine_rf1
+```
+
+```{r}
+pred1 <- predict(wine_rf1, newdata=wine_test2)
+confusionMatrix(pred1, wine_test2$taste)
+```
+
+```{r}
+predtable <- table(pred1, wine_test2$taste)
+predtable
+```
+```{r}
+sum(diag(predtable))/nrow(wine_test2)
+```
+We build a decision tree to predict the quality of a wine. Our tree allows us to ask a yes-no question about each feature. For example, if a wine has alcohol >12 and sulfate <0.69, the quality of the wine is 6. Our model has an accuracy is 0.5701. In order to increase the accuracy, we use the Random Forest technique that builds a large collection of de-correlated trees to improve predictive performance. The next model has an accuracy is 0.8656. 
